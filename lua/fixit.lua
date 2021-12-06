@@ -15,14 +15,18 @@ local tokens = {
 -- @param node TSNode A node representing a fixit comment.
 -- @return table a structure, compatible with the quickfix window.
 local function node2qf(node)
-  -- TODO Look at qfformat, if possible, to adhere to that.
-  -- TODO Add type and location
+  -- TODO Include type?
+  --      Like map tokens to a specific type?  (might be error prone)
+  --      A solution might be to change the error format, but it might be
+  --      difficult to restore it at the right moment :grimacing:
+  -- TODO Extract Fixit token from comment.
   local row, col, _ = node:start()
   return {
     text = tsutils.get_node_text(node)[1],
     lnum = row + 1,
     col = col + 1,
     valid = true,
+    filename = vim.fn.expand("%"),
   }
 end
 
@@ -60,6 +64,10 @@ end
 local function qflist()
   local qflines = {}
   comments2qflines(parsers.get_tree_root(), qflines)
+  if next(qflines) == nil then
+    print('Fixit: Nothing to fix')
+    return
+  end
   vim.fn.setqflist(qflines)
   vim.api.nvim_command('copen')
 end
