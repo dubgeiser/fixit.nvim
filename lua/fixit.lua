@@ -38,10 +38,16 @@ local function is_fixit_comment(comment)
   return false
 end
 
+-- @param TSNode The node to check for Fixit compliance.
+-- @return bool Whether or not we're dealing with a Fixit comment node.
+local function is_fixit_node(node)
+  return node:type() == "comment" and is_fixit_comment(tsutils.get_node_text(node)[1])
+end
+
 -- @param TSNode node The TSNode to traverse and find Fixit comments.
 -- @param table qflist The list that will be filled with QuickFix items.
 local function comments2qflines(node, qflist)
-  if node:type() == "comment" and is_fixit_comment(tsutils.get_node_text(node)[1]) then
+  if is_fixit_node(node) then
     table.insert(qflist, node2qf(node))
   else
     for child in node:iter_children() do
