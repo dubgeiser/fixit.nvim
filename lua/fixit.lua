@@ -12,19 +12,22 @@ local tokens = {
   'TODO',
 }
 
--- @param string tokenline The line that starts with a token
--- @param string The Fixit token (see tokens)
--- @return string a string compatible with a line in qflist.
-local function to_qfline(comment)
+-- @param node TSNode A node representing a fixit comment.
+-- @return table a structure, compatible with the quickfix window.
+local function node2qf(node)
   -- TODO Look at qfformat, if possible, to adhere to that.
   -- TODO Add type and location
+  local row, col, _ = node:start()
   return {
-    text = comment,
+    text = tsutils.get_node_text(node)[1],
+    lnum = row + 1,
+    col = col + 1,
+    valid = true,
   }
 end
 
--- @param TSNode node The comment TSNode to check...
--- @return whether or not the given text is a FiXiT comment.
+-- @param string comment The comment to check.
+-- @return bool whether or not the given text is a FiXiT comment.
 --         First found token triggers `true`
 local function is_fixit_comment(comment)
   for _, t in ipairs(tokens) do
@@ -35,39 +38,32 @@ local function is_fixit_comment(comment)
   return false
 end
 
--- @return string[]  All the FIXIT comments within the given node.
-local function all_comments(node, comments)
-  if node:type() == "comment" then
-    local comment = tsutils.get_node_text(node)[1]
-    if is_fixit_comment(comment) then
-      table.insert(comments, tsutils.get_node_text(node)[1])
-    end
+-- @param TSNode node The TSNode to traverse and find Fixit comments.
+-- @param table qflist The list that will be filled with QuickFix items.
+local function comments2qflines(node, qflist)
+  if node:type() == "comment" and is_fixit_comment(tsutils.get_node_text(node)[1]) then
+    table.insert(qflist, node2qf(node))
   else
     for child in node:iter_children() do
-      all_comments(child, comments)
+      comments2qflines(child, qflist)
     end
   end
-  return comments
 end
 
-
---
 -- Find all the tokens and list them in the QuickFix window.
-local function list()
+local function qflist()
   local qflines = {}
-  local comments = all_comments(parsers.get_tree_root(), {})
-  for _, comment in ipairs(comments) do
-    table.insert(qflines, to_qfline(comment))
-  end
+  comments2qflines(parsers.get_tree_root(), qflines)
   vim.fn.setqflist(qflines)
   vim.api.nvim_command('copen')
 end
 
 local function setup()
-  vim.cmd [[ command! FixitList :lua require'fixit'.list() ]]
+  vim.cmd [[ command! FixitList :lua require'fixit'.qflist() ]]
 end
+
 
 return {
   setup = setup,
-  list = list,
+  qflist = qflist,
 }
