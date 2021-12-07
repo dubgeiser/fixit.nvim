@@ -6,6 +6,7 @@ local parsers = require('nvim-treesitter.parsers')
 local tsutils= require('nvim-treesitter.ts_utils')
 
 -- The tokens to consider.
+-- As a word group pattern for `string.gsub`
 local tokens = {
   'FIXME',
   'XXX',
@@ -14,15 +15,11 @@ local tokens = {
 
 -- @param node TSNode A node representing a fixit comment.
 -- @return table a structure, compatible with the quickfix window.
-local function node2qf(node)
-  -- TODO Include type?
-  --      Like map tokens to a specific type?  (might be error prone)
-  --      A solution might be to change the error format, but it might be
-  --      difficult to restore it at the right moment :grimacing:
-  -- TODO Extract Fixit token from comment.
+local function node2qf(node, token, text)
   local row, col, _ = node:start()
   return {
-    text = tsutils.get_node_text(node)[1],
+    text = text,
+    module = token,
     lnum = row + 1,
     col = col + 1,
     valid = true,
@@ -30,29 +27,31 @@ local function node2qf(node)
   }
 end
 
--- @param string comment The comment to check.
--- @return bool whether or not the given text is a FiXiT comment.
---         First found token triggers `true`
-local function is_fixit_comment(comment)
-  for _, t in ipairs(tokens) do
-    if string.match(comment, t) then
-      return true
+-- @param TSNode The node to check for Fixit compliance.
+-- @return table qf structure or `nil` if the node couldn't be parsed.
+local function parse_fixit_node(node)
+  if node:type() ~= "comment" then return nil end
+  local fulltext = tsutils.get_node_text(node)[1]
+  local capture
+  local text
+
+  -- FIXME This can probably be simpler.
+  for _, token in ipairs(tokens) do
+    capture = fulltext:gmatch(token .. '%s(.*)$')
+    text = capture()
+    if text ~= nil then
+      return node2qf(node, token, text)
     end
   end
-  return false
-end
-
--- @param TSNode The node to check for Fixit compliance.
--- @return bool Whether or not we're dealing with a Fixit comment node.
-local function is_fixit_node(node)
-  return node:type() == "comment" and is_fixit_comment(tsutils.get_node_text(node)[1])
+  return nil
 end
 
 -- @param TSNode node The TSNode to traverse and find Fixit comments.
 -- @param table qflist The list that will be filled with QuickFix items.
 local function comments2qflines(node, qflist)
-  if is_fixit_node(node) then
-    table.insert(qflist, node2qf(node))
+  local qf = parse_fixit_node(node)
+  if qf ~= nil then
+    table.insert(qflist, qf)
   else
     for child in node:iter_children() do
       comments2qflines(child, qflist)
@@ -68,12 +67,16 @@ local function qflist()
     print('Fixit: Nothing to fix')
     return
   end
-  vim.fn.setqflist(qflines)
+  vim.fn.setqflist({}, ' ', {
+    id = "FIXIT_QF",
+    title = "  Fixit",
+    items = qflines,
+  })
   vim.api.nvim_command('copen')
 end
 
 local function setup()
-  vim.cmd [[ command! FixitList :lua require'fixit'.qflist() ]]
+  vim.cmd [[ command! Fixit :lua require'fixit'.qflist() ]]
 end
 
 
