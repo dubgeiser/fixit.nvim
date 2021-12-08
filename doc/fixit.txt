@@ -1,0 +1,30 @@
+
+*fixit.txt*                     For Nvim 0.5+
+==============================================================================
+INTRODUCTION                                                         *Fixit*
+
+Fixit is a Neovim plugin for listing up those 'TODO', 'FIXME' and 'XXX' tags
+that dangle around in (code) comments and listing them up in the |quickfix|
+window.
+
+Use your favorite package manager to install. >
+    use 'dubgeiser/nvim-fixit'
+
+<And then issue the command for updating the plugins (like `PackerSync` etc.)
+
+Setup Fixit with default options: >
+    require 'fixit'.setup()
+
+==============================================================================
+USAGE                                                            *fixit-usage*
+
+Type `Fixit` in command mode. And the 'XXX', 'FIXME', 'TODO' will be listed in
+the QuickFix window.
+==============================================================================
+ABOUT                                                            *fixit-about*
+
+Source code and issue tracker:
+
+https://github.com/dubgeiser/nvim-fixit
+
+ vim:tw=78:et:ft=help:norl:
