@@ -8,7 +8,7 @@ that dangle around in (code) comments and listing them up in the |quickfix|
 window.
 
 Use your favorite package manager to install. >
-    use 'dubgeiser/nvim-fixit'
+    use 'dubgeiser/fixit.nvim'
 
 <And then issue the command for updating the plugins (like `PackerSync` etc.)
 
@@ -25,6 +25,6 @@ ABOUT                                                            *fixit-about*
 
 Source code and issue tracker:
 
-https://github.com/dubgeiser/nvim-fixit
+https://github.com/dubgeiser/fixit.nvim
 
  vim:tw=78:et:ft=help:norl:
