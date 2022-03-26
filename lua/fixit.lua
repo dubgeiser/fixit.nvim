@@ -61,6 +61,10 @@ end
 
 -- Find all the tokens and list them in the QuickFix window.
 local function qflist()
+  if not parsers.has_parser() then
+    print("Fixit: No parser for [" .. vim.bo.filetype .. "] type")
+    return
+  end
   local qflines = {}
   comments2qflines(parsers.get_tree_root(), qflines)
   if next(qflines) == nil then
