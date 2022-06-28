@@ -5,9 +5,26 @@
 local parsers = require('nvim-treesitter.parsers')
 local tsutils= require('nvim-treesitter.ts_utils')
 
+-- Given a list of tokens to look out for, build and return a table with all
+-- these tokens, including their most common variations to be found in code.
+--
+-- @param table List of tokens that Fixit should consider to be a thing to fix.
+-- @return table List of the tokens and their variations.
+local function build_token_variations(base_tokens)
+  local tokens = {}
+  for _, token in ipairs(base_tokens) do
+    table.insert(tokens, token)
+    table.insert(tokens, ':' .. token .. ':')
+    table.insert(tokens, token .. ':')
+  end
+  return tokens
+end
+
 -- The tokens to consider.
 -- As a word group pattern for `string.gsub`
-local tokens = {
+-- This will be complemented with variations of the tokens, like `:TOKEN:` and
+-- `TOKEN:` and put in the local var `tokens`
+local tokens = build_token_variations {
   'FIXME',
   'XXX',
   'TODO',
