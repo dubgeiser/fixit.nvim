@@ -48,7 +48,7 @@ end
 -- @return table qf structure or `nil` if the node couldn't be parsed.
 local function parse_fixit_node(node)
   if node:type() ~= "comment" then return nil end
-  local fulltext = tsutils.get_node_text(node)[1]
+  local fulltext = vim.treesitter.query.get_node_text(node, vim.api.nvim_get_current_buf())
   local capture
   local text
 
