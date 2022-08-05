@@ -2,8 +2,6 @@
 -- Fixit
 --
 
-local parsers = require('nvim-treesitter.parsers')
-local tsutils= require('nvim-treesitter.ts_utils')
 
 -- Given a list of tokens to look out for, build and return a table with all
 -- these tokens, including their most common variations to be found in code.
@@ -77,13 +75,16 @@ local function comments2qflines(node, qflist)
 end
 
 -- Find all the tokens and list them in the QuickFix window.
+-- TODO Spit out nicer error message than the readable exception it does now.
 local function qflist()
-  if not parsers.has_parser() then
-    print("Fixit: No parser for [" .. vim.bo.filetype .. "] type")
-    return
-  end
+  local buf = vim.api.nvim_get_current_buf()
+  local lang = vim.bo.filetype
+  local language_tree = vim.treesitter.get_parser(buf, lang)
+  local syntax_tree = language_tree:parse()
+  local root = syntax_tree[1]:root()
+
   local qflines = {}
-  comments2qflines(parsers.get_tree_root(), qflines)
+  comments2qflines(root, qflines)
   if next(qflines) == nil then
     print('Fixit: Nothing to fix')
     return
