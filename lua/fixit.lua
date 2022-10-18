@@ -5,29 +5,16 @@
 local ts = vim.treesitter
 local currbuf = vim.api.nvim_get_current_buf
 
--- Given a list of tokens to look out for, build and return a table with all
--- these tokens, including their most common variations to be found in code.
---
--- @param table List of tokens that Fixit should consider to be a thing to fix.
--- @return table List of the tokens and their variations.
-local function build_token_variations(base_tokens)
-  local tokens = {}
-  for _, token in ipairs(base_tokens) do
-    table.insert(tokens, token)
-    table.insert(tokens, ':' .. token .. ':')
-    table.insert(tokens, token .. ':')
-  end
-  return tokens
-end
-
 -- The tokens to consider.
--- As a word group pattern for `string.gsub`
--- This will be complemented with variations of the tokens, like `:TOKEN:` and
--- `TOKEN:` and put in the local var `tokens`
-local tokens = build_token_variations {
+-- Special chars should be properly escaped so they can be used in a treesitter
+-- #match? predicate.
+local tokens = {
   'FIXME',
+  'FIXME:',
   'XXX',
   'TODO',
+  'TODO:',
+  '\\\\@todo',
 }
 
 -- String representation of the tokens that can be used to match against in our
@@ -40,10 +27,11 @@ local function parse_full_comment(fulltext)
   local capture
   local text
   for _, token in ipairs(tokens) do
-    capture = fulltext:gmatch(token .. '%s(.*)$')
+    local literal_token = token:gsub('\\', '', 2)
+    capture = fulltext:gmatch(literal_token .. '%s(.*)$')
     text = capture()
     if text ~=nil then
-      return token, text
+      return literal_token, text
     end
   end
 end
