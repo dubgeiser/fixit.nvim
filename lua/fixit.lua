@@ -6,32 +6,43 @@ local ts = vim.treesitter
 local currbuf = vim.api.nvim_get_current_buf
 
 -- The tokens to consider.
+-- This maps a token type to a list of Fixit tokens.
+-- The type will be shown in the QuickFix window.
 -- Special chars should be properly escaped so they can be used in a treesitter
 -- #match? predicate.
-local tokens = {
-  'FIXME',
-  'FIXME:',
-  'XXX',
-  'TODO',
-  'TODO:',
-  '\\\\@todo',
+local token_map = {
+  FIX = {'FIXME', 'FIXME:'},
+  TODO = {'TODO', 'TODO:', '\\\\@todo'},
+  NOTE = {'NOTE', 'NOTE:', 'XXX', 'XXX:'},
 }
+
+local function build_token_query_match(token_map)
+  local all_tokens = {}
+  for _, tokens in pairs(token_map) do
+    for _, token in ipairs(tokens) do
+      table.insert(all_tokens, token)
+    end
+  end
+  return table.concat(all_tokens, '|')
+end
 
 -- String representation of the tokens that can be used to match against in our
 -- Treesitter query.
-local tokens_query_match = table.concat(tokens, '|')
+local tokens_query_match = build_token_query_match(token_map)
 
 -- @param string Text to parse out the Fixit token and the corresponding text.
--- @return table First element is the Fixit token, second the text without token.
+-- @return table First element is the type of Fixit token, second the text.
 local function parse_full_comment(fulltext)
   local capture
   local text
-  for _, token in ipairs(tokens) do
-    local literal_token = token:gsub('\\', '', 2)
-    capture = fulltext:gmatch(literal_token .. '%s(.*)$')
-    text = capture()
-    if text ~=nil then
-      return literal_token, text
+  for type, tokens in pairs(token_map) do
+    for _, token in ipairs(tokens) do
+      local literal_token = token:gsub('\\', '', 2)
+      capture = fulltext:gmatch(literal_token .. '%s(.*)$')
+      text = capture()
+      if text ~=nil then
+        return type, text
+      end
     end
   end
 end
@@ -40,10 +51,10 @@ end
 -- @return table a structure, compatible with the quickfix window.
 local function node2qf(node)
   local row, col, _ = node:start()
-  local token, text = parse_full_comment(ts.query.get_node_text(node, currbuf()))
+  local type, text = parse_full_comment(ts.query.get_node_text(node, currbuf()))
   return {
     text = text,
-    module = token,
+    module = type,
     lnum = row + 1,
     col = col + 1,
     valid = true,
