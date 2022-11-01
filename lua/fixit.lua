@@ -20,6 +20,14 @@ local token_map = {
   {"NOTE", {'NOTE', 'NOTE:', 'XXX', 'XXX:', '\\\\@note'}},
 }
 
+-- Options for the plugin.
+-- These are all the default options that can be overridden by passing a table
+-- with options to the setup() function.
+local options = {
+  -- Should we integrate with Trouble plugin (https://github.com/folke/trouble.nvim)
+  trouble_integration = false,
+}
+
 -- @param string Text to parse out the Fixit token and the corresponding text.
 -- @param table tokens The tokens to consider for the given type.
 -- @return table First element is the type of Fixit token, second the text.
@@ -63,11 +71,15 @@ local function build_query(tokens)
   ]])
 end
 
--- Find all the comments with Fixit tokens and list them in the QuickFix window.
-local function qflist()
-  local language_tree = ts.get_parser(currbuf(), vim.bo.filetype)
-  local syntax_tree = language_tree:parse()
-  local root = syntax_tree[1]:root()
+-- Return the root node for the document in the current buffer.
+--
+-- @return TSNode
+local function rootnode()
+  return vim.treesitter.get_parser(currbuf(), vim.bo.ft):parse()[1]:root()
+end
+
+local function build_qflines()
+  local root = rootnode()
   local qflines = {}
   local query, token_type, tokens
 
@@ -81,7 +93,12 @@ local function qflist()
       end
     end
   end
+  return qflines
+end
 
+-- Find all the comments with Fixit tokens and list them in the QuickFix window.
+local function qflist()
+  local qflines = build_qflines()
   if next(qflines) == nil then
     print('Fixit: Nothing to fix')
   else
@@ -90,12 +107,31 @@ local function qflist()
       title = "  Fixit",
       items = qflines,
     })
-    vim.api.nvim_command('copen')
+    if options.trouble_integration then
+      vim.api.nvim_command('Trouble quickfix')
+    else
+      vim.api.nvim_command('copen')
+    end
+  end
+end
+
+-- Set the options
+-- This function will error if a given option is not in the default options.
+-- @param table opts The options overriding the default options.
+local function set_options(opts)
+  opts = opts or {}
+  for k, v in pairs(opts) do
+    if options[k] == nil then
+      error('Unknown option ['..k..']')
+    else
+      options[k] = v
+    end
   end
 end
 
 -- Setup the Fixit plugin.
-local function setup()
+local function setup(opts)
+  set_options(opts)
   vim.cmd [[ command! Fixit :lua require'fixit'.qflist() ]]
 end
 
