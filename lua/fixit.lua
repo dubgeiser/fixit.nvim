@@ -96,22 +96,26 @@ local function build_qflines()
   return qflines
 end
 
+-- Show the Fixit items
+-- @param table items List of Fixit items to show.
+local function show_fixit_list(items)
+  vim.fn.setqflist({}, ' ', {
+    id = "FIXIT_QF",
+    title = "  Fixit",
+    items = items,
+  })
+  local command = options.trouble_integration and 'Trouble quickfix'
+                  or 'horizontal bo copen'
+  vim.api.nvim_command(command)
+end
+
 -- Find all the comments with Fixit tokens and list them in the QuickFix window.
 local function qflist()
   local qflines = build_qflines()
   if next(qflines) == nil then
     print('Fixit: Nothing to fix')
   else
-    vim.fn.setqflist({}, ' ', {
-      id = "FIXIT_QF",
-      title = "  Fixit",
-      items = qflines,
-    })
-    if options.trouble_integration then
-      vim.api.nvim_command('Trouble quickfix')
-    else
-      vim.api.nvim_command('copen')
-    end
+    show_fixit_list(qflines)
   end
 end
 
