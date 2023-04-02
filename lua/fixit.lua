@@ -2,7 +2,7 @@
 -- Fixit
 --
 
-local tsq = vim.treesitter.query
+local ts = vim.treesitter
 local currbuf = vim.api.nvim_get_current_buf
 
 -- The tokens to consider.
@@ -43,13 +43,14 @@ local function parse_full_comment(fulltext, tokens)
   end
 end
 
+-- TODO test
 -- @param node TSNode A node representing a fixit comment.
 -- @param string token_type The type of tokens we're converting
 -- @param table tokens The tokens to consider for the given type.
 -- @return table a structure, compatible with the quickfix window.
 local function node2qf(node, token_type, tokens)
   local row, col, _ = node:start()
-  local text = parse_full_comment(tsq.get_node_text(node, currbuf()), tokens)
+  local text = parse_full_comment(ts.get_node_text(node, currbuf()), tokens)
   return {
     text = text,
     module = token_type,
@@ -63,7 +64,7 @@ end
 -- @param table the tokens to conside
 -- @return TSQuery The query that will collect the Fixit nodes.
 local function build_query(tokens)
-  return tsq.parse(vim.bo.filetype, [[
+  return ts.query.parse(vim.bo.filetype, [[
     (
       (comment) @comment
       (#match? @comment "]]..table.concat(tokens, '|')..[[")
