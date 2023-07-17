@@ -1,9 +1,6 @@
---
--- Fixit
---
-
 local ts = vim.treesitter
 local currbuf = vim.api.nvim_get_current_buf
+local M = {}
 
 -- The tokens to consider.
 -- This maps a token type to a list of Fixit tokens.
@@ -15,9 +12,9 @@ local currbuf = vim.api.nvim_get_current_buf
 -- Special chars should be properly escaped so they can be used in a treesitter
 -- #match? predicate.
 local token_map = {
-  {"FIX", {'FIXME', 'FIXME:'}},
-  {"TODO", {'TODO', 'TODO:', '\\\\@todo'}},
-  {"NOTE", {'NOTE', 'NOTE:', 'XXX', 'XXX:', '\\\\@note'}},
+  { "FIX",  { 'FIXME', 'FIXME:' } },
+  { "TODO", { 'TODO', 'TODO:', '\\\\@todo' } },
+  { "NOTE", { 'NOTE', 'NOTE:', 'XXX', 'XXX:', '\\\\@note' } },
 }
 
 -- Options for the plugin.
@@ -28,26 +25,26 @@ local options = {
   trouble_integration = false,
 }
 
--- @param string Text to parse out the Fixit token and the corresponding text.
--- @param table tokens The tokens to consider for the given type.
--- @return table First element is the type of Fixit token, second the text.
+---@param fulltext string
+---@param tokens table
+---@return table - First element: type of Fixit token, second: its text.
 local function parse_full_comment(fulltext, tokens)
   local capture
   local text
   for _, token in ipairs(tokens) do
     capture = fulltext:gmatch(token:gsub('\\', '', 2) .. '%s(.*)$')
     text = capture()
-    if text ~=nil then
+    if text ~= nil then
       return text
     end
   end
 end
 
 -- TODO test
--- @param node TSNode A node representing a fixit comment.
--- @param string token_type The type of tokens we're converting
--- @param table tokens The tokens to consider for the given type.
--- @return table a structure, compatible with the quickfix window.
+---@param node TSNode A node representing a fixit comment.
+---@param token_type string token_type The type of tokens we're converting
+---@param tokens table The tokens to consider for the given type.
+---@return table - Quickfix window-compatible struct.
 local function node2qf(node, token_type, tokens)
   local row, col, _ = node:start()
   local text = parse_full_comment(ts.get_node_text(node, currbuf()), tokens)
@@ -61,20 +58,18 @@ local function node2qf(node, token_type, tokens)
   }
 end
 
--- @param table the tokens to conside
--- @return TSQuery The query that will collect the Fixit nodes.
+---@param tokens table
+---@return Query - The query that will collect the Fixit nodes.
 local function build_query(tokens)
   return ts.query.parse(vim.bo.filetype, [[
     (
       (comment) @comment
-      (#match? @comment "]]..table.concat(tokens, '|')..[[")
+      (#match? @comment "]] .. table.concat(tokens, '|') .. [[")
     )
   ]])
 end
 
--- Return the root node for the document in the current buffer.
---
--- @return TSNode
+---@return TSNode
 local function rootnode()
   return vim.treesitter.get_parser(currbuf(), vim.bo.ft):parse()[1]:root()
 end
@@ -97,8 +92,7 @@ local function build_qflines()
   return qflines
 end
 
--- Show the Fixit items
--- @param table items List of Fixit items to show.
+---@param items table List of Fixit items to show.
 local function show_fixit_list(items)
   vim.fn.setqflist({}, ' ', {
     id = "FIXIT_QF",
@@ -106,12 +100,28 @@ local function show_fixit_list(items)
     items = items,
   })
   local command = options.trouble_integration and 'Trouble quickfix'
-                  or 'horizontal bo copen'
+      or 'horizontal bo copen'
   vim.api.nvim_command(command)
 end
 
--- Find all the comments with Fixit tokens and list them in the QuickFix window.
-local function qflist()
+---@param opts table The options overriding the default options.
+local function set_options(opts)
+  opts = opts or {}
+  for k, v in pairs(opts) do
+    if options[k] == nil then
+      error('Unknown option [' .. k .. ']')
+    else
+      options[k] = v
+    end
+  end
+end
+
+function M.setup(opts)
+  set_options(opts)
+  vim.cmd [[ command! Fixit :lua require'fixit'.qflist() ]]
+end
+
+function M.qflist()
   local qflines = build_qflines()
   if next(qflines) == nil then
     print('Fixit: Nothing to fix')
@@ -120,28 +130,4 @@ local function qflist()
   end
 end
 
--- Set the options
--- This function will error if a given option is not in the default options.
--- @param table opts The options overriding the default options.
-local function set_options(opts)
-  opts = opts or {}
-  for k, v in pairs(opts) do
-    if options[k] == nil then
-      error('Unknown option ['..k..']')
-    else
-      options[k] = v
-    end
-  end
-end
-
--- Setup the Fixit plugin.
-local function setup(opts)
-  set_options(opts)
-  vim.cmd [[ command! Fixit :lua require'fixit'.qflist() ]]
-end
-
-
-return {
-  setup = setup,
-  qflist = qflist,
-}
+return M
