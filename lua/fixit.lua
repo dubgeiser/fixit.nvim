@@ -84,8 +84,10 @@ local function build_qflines()
     tokens = map[2]
     query = build_query(tokens)
     for _, match, _ in query:iter_matches(root, currbuf()) do
-      for _, node in pairs(match) do
-        table.insert(qflines, node2qf(node, token_type, tokens))
+      for _, nodes in pairs(match) do
+        for _, node in ipairs(nodes) do
+          table.insert(qflines, node2qf(node, token_type, tokens))
+        end
       end
     end
   end
