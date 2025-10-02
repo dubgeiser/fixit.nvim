@@ -27,7 +27,7 @@ local options = {
 
 ---@param fulltext string
 ---@param tokens table
----@return table - First element: type of Fixit token, second: its text.
+---@return string - The relevant text of the fixit token
 local function parse_full_comment(fulltext, tokens)
   local capture
   local text
@@ -38,6 +38,7 @@ local function parse_full_comment(fulltext, tokens)
       return text
     end
   end
+  return ""
 end
 
 -- TODO test
@@ -59,7 +60,7 @@ local function node2qf(node, token_type, tokens)
 end
 
 ---@param tokens table
----@return Query - The query that will collect the Fixit nodes.
+---@return vim.treesitter.Query - The query that will collect the Fixit nodes.
 local function build_query(tokens)
   return ts.query.parse(vim.bo.filetype, [[
     (
@@ -97,7 +98,6 @@ end
 ---@param items table List of Fixit items to show.
 local function show_fixit_list(items)
   vim.fn.setqflist({}, ' ', {
-    id = "FIXIT_QF",
     title = "  Fixit",
     items = items,
   })
