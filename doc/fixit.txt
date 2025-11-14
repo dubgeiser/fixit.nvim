@@ -24,14 +24,6 @@ Use your favorite package manager to install (here Packer). >
 
 Setup Fixit with default options: >
     require 'fixit'.setup()
-
-If you have Trouble installed (https://github.com/folke/trouble.nvim) you can
-set up Fixit to automatically open up the Trouble window instead of the
-quickfix window: >
-    require 'fixit'.setup({
-        trouble_integration = true,
-    })
-
 ==============================================================================
 USAGE                                                            *fixit-usage*
 

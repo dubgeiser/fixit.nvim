@@ -21,8 +21,6 @@ local token_map = {
 -- These are all the default options that can be overridden by passing a table
 -- with options to the setup() function.
 local options = {
-  -- Should we integrate with Trouble plugin (https://github.com/folke/trouble.nvim)
-  trouble_integration = false,
 }
 
 ---@param fulltext string
@@ -101,9 +99,7 @@ local function show_fixit_list(items)
     title = "  Fixit",
     items = items,
   })
-  local command = options.trouble_integration and 'Trouble quickfix'
-      or 'horizontal bo copen'
-  vim.api.nvim_command(command)
+  vim.api.nvim_command('horizontal bo copen')
 end
 
 ---@param opts table The options overriding the default options.
