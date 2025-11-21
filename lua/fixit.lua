@@ -48,6 +48,7 @@ local function node2qf(node, token_type, tokens)
   local row, col, _ = node:start()
   local text = parse_full_comment(ts.get_node_text(node, currbuf()), tokens)
   return {
+    bufnr = currbuf(),
     text = text,
     module = token_type,
     lnum = row + 1,
@@ -95,11 +96,13 @@ end
 
 ---@param items table List of Fixit items to show.
 local function show_fixit_list(items)
-  vim.fn.setqflist({}, ' ', {
+  -- We cannot have a 'list' and a 'what' in the same setloclist() call.
+  -- Probably has to do with the fact that location lists are window-local.
+  vim.fn.setloclist(0, items, 'r')
+  vim.fn.setloclist(0, {}, 'r', {
     title = "  Fixit",
-    items = items,
   })
-  vim.api.nvim_command('horizontal bo copen')
+  vim.api.nvim_command('horizontal bo lopen')
 end
 
 ---@param opts table The options overriding the default options.
