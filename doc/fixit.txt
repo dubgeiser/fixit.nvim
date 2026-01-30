@@ -4,8 +4,7 @@
 INTRODUCTION                                                         *Fixit*
 
 Fixit is a Neovim plugin for listing up those 'TODO', 'FIXME' and 'XXX' tags
-that dangle around in (code) comments and listing them up in the |quickfix|
-window.
+that dangle around in code comments and listing them up in a location window.
 
 Fixit distinguishes 3 types of tokens (tags): 'FIX', 'TODO' and 'NOTE'.
 Each type has a list of known tokens, following tokens for instance are all
@@ -17,10 +16,7 @@ recognized as a 'TODO':
 Fixit does not support multiline, only the text on the same line as the token
 is considered.
 
-Use your favorite package manager to install (here Packer). >
-    use 'dubgeiser/fixit.nvim'
-
-<And then issue the command for updating the plugins (like `PackerSync` etc.)
+Use your favorite package manager to install `dubgeiser/fixit.nvim`
 
 Setup Fixit with default options: >
     require 'fixit'.setup()
@@ -28,7 +24,7 @@ Setup Fixit with default options: >
 USAGE                                                            *fixit-usage*
 
 Type `Fixit` in command mode. And the 'XXX', 'FIXME', 'TODO' will be listed in
-the QuickFix window.
+a location window.
 ==============================================================================
 ABOUT                                                            *fixit-about*
 
